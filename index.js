@@ -32,6 +32,17 @@ async function run() {
     const usersCollection = client.db("taskify").collection("users");
     const tasksCollection = client.db("taskify").collection("tasks");
 
+    app.post("/users", async (req, res) => {
+        const { _id, email, name, photo } = req.body;
+        const existingUser = await usersCollection.findOne({ _id });
+      
+        if (!existingUser){
+            const result = await usersCollection.insertOne({ _id, email, name, photo});
+            res.send(result);
+        } 
+        
+      });
+
 
 
 
