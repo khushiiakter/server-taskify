@@ -45,32 +45,40 @@ async function run() {
       }
     });
 
+    // app.get("/tasks", async (req, res) => {
+    //   const result = await tasksCollection.find().sort({ order: 1 }).toArray();
+    //   res.send(result);
+    // });
+
+    // app.post("/tasks", async (req, res) => {
+    //   const newTask = req.body;
+
+    //   const result = await tasksCollection.insertOne(newTask);
+    //   res.send(result);
+    // });
+
     app.get("/tasks", async (req, res) => {
-      const result = await tasksCollection.find().toArray();
+      const result = await tasksCollection.find().sort({ order: 1 }).toArray();
       res.send(result);
     });
-
+    
     app.post("/tasks", async (req, res) => {
       const newTask = req.body;
-
+    
+      // Find the last task in the same category to determine the new order
+      const lastTask = await tasksCollection
+        .find({ category: newTask.category })
+        .sort({ order: -1 })
+        .limit(1)
+        .toArray();
+    
+      newTask.order = lastTask.length > 0 ? lastTask[0].order + 1 : 0;
+    
       const result = await tasksCollection.insertOne(newTask);
       res.send(result);
     });
-    // app.put("/tasks/:id", async (req, res) => {
-    //   const { id } = req.params;
-    //   const { _id, ...updatedTask} = req.body;
-    //   const result = await tasksCollection.updateOne(
-    //     { _id: new ObjectId(id) },
-    //     { $set: updatedTask }
-    //   );
-    //   if (result.modifiedCount === 0) {
-    //     return res.status(404).send({
-    //       success: false,
-    //       message: "Task not found or no changes made.",
-    //     });
-    //   }
-    //   res.send({ success: true, message: "Task updated successfully." });
-    // });
+    
+
     app.put("/tasks/:id", async (req, res) => {
       const { id } = req.params;
       const updatedTask = req.body;
@@ -85,17 +93,35 @@ async function run() {
           { $set: updatedTask }
         );
     
-        if (result.matchedCount === 0) {
-          return res.status(404).send({ success: false, message: "Task not found." });
+        if (result.modifiedCount === 0) {
+          return res.status(404).send({ success: false, message: "Task not found or no changes made." });
         }
     
         res.send({ success: true, message: "Task updated successfully." });
       } catch (error) {
-        console.error("Error during update:", error);
-        res.status(500).send({ success: false, message: "Database update failed." });
+        console.error("Error updating task:", error);
+        res.status(500).send({ success: false, message: "Internal Server Error" });
       }
     });
+
+    app.put("/tasks/reorder", async (req, res) => {
+      const { tasks } = req.body;
     
+      try {
+        const bulkOps = tasks.map((task) => ({
+          updateOne: {
+            filter: { _id: new ObjectId(task._id) },
+            update: { $set: { order: task.order } },
+          },
+        }));
+    
+        await tasksCollection.bulkWrite(bulkOps);
+        res.json({ message: "Tasks reordered successfully!" });
+      } catch (error) {
+        console.error("Failed to reorder tasks:", error);
+        res.status(500).json({ error: "Failed to reorder tasks" });
+      }
+    });
     
     
     app.delete("/tasks/:id", async (req, res) => {
