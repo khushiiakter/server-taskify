@@ -58,13 +58,20 @@ async function run() {
     });
     app.put("/tasks/:id", async (req, res) => {
       const { id } = req.params;
-      const updatedTask = req.body;
+      const { _id, ...updatedTask} = req.body;
       const result = await tasksCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: updatedTask }
       );
-      res.send(result);
+      if (result.modifiedCount === 0) {
+        return res.status(404).send({
+          success: false,
+          message: "Task not found or no changes made.",
+        });
+      }
+      res.send({ success: true, message: "Task updated successfully." });
     });
+
     app.delete("/tasks/:id", async (req, res) => {
       const { id } = req.params;
       const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
