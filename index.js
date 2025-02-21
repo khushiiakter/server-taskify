@@ -56,22 +56,48 @@ async function run() {
       const result = await tasksCollection.insertOne(newTask);
       res.send(result);
     });
+    // app.put("/tasks/:id", async (req, res) => {
+    //   const { id } = req.params;
+    //   const { _id, ...updatedTask} = req.body;
+    //   const result = await tasksCollection.updateOne(
+    //     { _id: new ObjectId(id) },
+    //     { $set: updatedTask }
+    //   );
+    //   if (result.modifiedCount === 0) {
+    //     return res.status(404).send({
+    //       success: false,
+    //       message: "Task not found or no changes made.",
+    //     });
+    //   }
+    //   res.send({ success: true, message: "Task updated successfully." });
+    // });
     app.put("/tasks/:id", async (req, res) => {
       const { id } = req.params;
-      const { _id, ...updatedTask} = req.body;
-      const result = await tasksCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updatedTask }
-      );
-      if (result.modifiedCount === 0) {
-        return res.status(404).send({
-          success: false,
-          message: "Task not found or no changes made.",
-        });
+      const updatedTask = req.body;
+    
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ success: false, message: "Invalid task ID." });
       }
-      res.send({ success: true, message: "Task updated successfully." });
+    
+      try {
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedTask }
+        );
+    
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ success: false, message: "Task not found." });
+        }
+    
+        res.send({ success: true, message: "Task updated successfully." });
+      } catch (error) {
+        console.error("Error during update:", error);
+        res.status(500).send({ success: false, message: "Database update failed." });
+      }
     });
-
+    
+    
+    
     app.delete("/tasks/:id", async (req, res) => {
       const { id } = req.params;
       const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
