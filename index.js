@@ -25,7 +25,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const usersCollection = client.db("taskify").collection("users");
     const tasksCollection = client.db("taskify").collection("tasks");
@@ -45,20 +45,24 @@ async function run() {
       }
     });
 
+    
+
     // app.get("/tasks", async (req, res) => {
     //   const result = await tasksCollection.find().sort({ order: 1 }).toArray();
     //   res.send(result);
     // });
-
-    // app.post("/tasks", async (req, res) => {
-    //   const newTask = req.body;
-
-    //   const result = await tasksCollection.insertOne(newTask);
-    //   res.send(result);
-    // });
-
     app.get("/tasks", async (req, res) => {
-      const result = await tasksCollection.find().sort({ order: 1 }).toArray();
+      const email = req.query.email;
+
+      let result;
+
+      if (email) {
+        const query = { userEmail: email };
+        result = await tasksCollection.find(query).sort({ order: 1 }).toArray();
+      } else {
+        result = await tasksCollection.find().sort({ order: 1 }).toArray();
+      }
+
       res.send(result);
     });
     
@@ -130,10 +134,10 @@ async function run() {
       res.send(result);
     });
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
