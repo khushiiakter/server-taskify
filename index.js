@@ -46,11 +46,6 @@ async function run() {
     });
 
     
-
-    // app.get("/tasks", async (req, res) => {
-    //   const result = await tasksCollection.find().sort({ order: 1 }).toArray();
-    //   res.send(result);
-    // });
     app.get("/tasks", async (req, res) => {
       const email = req.query.email;
 
